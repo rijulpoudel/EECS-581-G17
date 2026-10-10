@@ -12,6 +12,7 @@ Date Last Edited: 10/09/2026
 import pygame
 from board import Board
 from ai_solver import AISolver
+from controller import GameController
 
 pygame.init()
 
@@ -99,7 +100,7 @@ while at_start:
 
 
 # Create the board using the inherited game.
-board = Board(10, 10, num_mines=num_mines)
+board = Board(GameController(num_mines=num_mines, rows=10, cols=10, mode="single_player"))
 
 running = True
 
@@ -110,6 +111,12 @@ ai_solver = None
 
 clock = pygame.time.Clock()
 last_ai_tick = 0
+
+# TIMER: Only track games played without AI.
+single_play = True
+timer_start = None
+timer_elapsed = 0
+timer_stopped = False
 
 
 while running:
@@ -124,6 +131,7 @@ while running:
 
             # E selects Easy AI; M selects Medium AI.
             if event.key in (pygame.K_e, pygame.K_m):
+                single_play = False  # Switching to AI disables the single-play timer.
                 ai_mode = (
                     "easy" if event.key == pygame.K_e else "medium"
                 )
@@ -153,6 +161,9 @@ while running:
             # Left click reveals a cell.
             if event.button == 1:
                 board.handle_click(*event.pos)
+                # Start only when the first valid cell is revealed, not on flags.
+                if single_play and timer_start is None and not board.game.first_click:
+                    timer_start = pygame.time.get_ticks()
 
             # Right click toggles a flag.
             elif event.button == 3:
@@ -162,6 +173,12 @@ while running:
     # Run one AI move every 300 milliseconds.
     # This keeps the interface responsive and the moves visible.
     now = pygame.time.get_ticks()
+
+    # TIMER: Update until the player wins or loses.
+    if single_play and timer_start is not None and not timer_stopped:
+        timer_elapsed = now - timer_start
+        if board.game.game_over:
+            timer_stopped = True
 
     if auto_play and ai_solver is not None and now - last_ai_tick >= 300:
 
@@ -204,6 +221,12 @@ while running:
         "black"
     )
     screen.blit(mode_text, (330, 615))
+
+    # Show the timer in Single Play only.
+    if single_play:
+        timer_text = small_font.render(f"Time: {timer_elapsed // 1000}s", True, "black")
+        screen.blit(timer_text, (25, 615))
+
 
     pygame.display.flip()
     clock.tick(60)
