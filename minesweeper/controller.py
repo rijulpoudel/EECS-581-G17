@@ -1,9 +1,11 @@
 """
 Name: Controller.py
-Function: Manage turn and outcome rules for human-vs-AI and AI-solver logic
-External sources: ChatGPT Astra
+Function: Manage turn and outcome rules for single-player, human-vs-AI and AI-only games
+External sources: ChatGPT Astra; OpenAI Codex assisted PR review fixes
 Authors: Anh Hoang
+Maintenance: Kodai Nakae
 Date Created: 10/07/2026
+Date Last Edited: 10/10/2026
 """
 
 from minesweeper import Minesweeper
