@@ -4,9 +4,10 @@ Function: Start Minesweeper, draw the board, and handle player and computer turn
 Inputs: Number of mines, game mode, keyboard and mouse events
 Outputs: Pygame window, win and loss status
 External sources: pygame documentation for reference, VScode Copilot;
-                  OpenAI Codex assisted PR review fixes
+                  OpenAI Codex assisted PR review fixes; sound integration
+                  assisted by Hermes Agent (Nous Research), 10/10/2026
 Authors: Mo Osby, Drew Franke, Vrishank Kulkarni, Alex Lanter
-Maintenance: Kodai Nakae
+Maintenance: Kodai Nakae, Rijul Poudel
 Date Created: 09/12/2026
 Date Last Edited: 10/10/2026
 """
@@ -17,6 +18,7 @@ from ai_solver import AISolver
 from controller import GameController
 from solver import choose_move
 from timer import GameTimer
+from sound import SoundManager
 
 pygame.init()
 
@@ -72,6 +74,20 @@ def draw_input_screen(user_input, error):
     pygame.display.flip()
 
 
+def play_ai_step(game, step):
+    """Sound for an AISolver.step() move.
+
+    AISolver mutates the game directly and returns no result string, so the
+    outcome is inferred from the game state after the step.
+    """
+    if step is None:
+        return
+    if game.game_over:
+        sound.play_result(step[0], "won" if game.won else "lost")
+    else:
+        sound.play_result(step[0], "changed")
+
+
 user_input = ""
 error = ""
 at_start = True
@@ -104,6 +120,8 @@ while at_start:
 
 
 # Create the board using the inherited game.
+sound = SoundManager()
+sound.start_music()
 board = Board(GameController(num_mines=num_mines, rows=10, cols=10, mode="single_player"))
 
 running = True
@@ -148,7 +166,7 @@ while running:
 
             # SPACE executes one AI action.
             elif event.key == pygame.K_SPACE and ai_solver is not None:
-                ai_solver.step()
+                play_ai_step(board.game, ai_solver.step())
 
             # ESC disables AI gameplay.
             elif event.key == pygame.K_ESCAPE:
@@ -171,6 +189,10 @@ while running:
                 computer_paused = False
                 last_ai_tick = pygame.time.get_ticks()
 
+            # S toggles sound on and off.
+            elif event.key == pygame.K_s:
+                sound.toggle_mute()
+
         # ORIGINAL MANUAL GAMEPLAY
         if event.type == pygame.MOUSEBUTTONDOWN:
 
@@ -183,6 +205,9 @@ while running:
                 result = board.place_flag(*event.pos)
             else:
                 result = "no_change"
+
+            if result != "no_change":
+                sound.play_result("reveal" if event.button == 1 else "flag", result)
 
             if result == "changed" and board.controller.active_player == "computer":
                 last_ai_tick = pygame.time.get_ticks()
@@ -197,8 +222,11 @@ while running:
 
     if auto_play and ai_solver is not None and now - last_ai_tick >= 300:
 
+        step = ai_solver.step()
+        play_ai_step(board.game, step)
+
         # Stop autoplay if no move remains or the game finishes.
-        if ai_solver.step() is None or board.game.game_over:
+        if step is None or board.game.game_over:
             auto_play = False
 
         last_ai_tick = now
@@ -209,8 +237,13 @@ while running:
             and not board.game.game_over and now - last_ai_tick >= 300):
         try:
             move = choose_move(board.game.get_visible_board(), board.game.num_mines)
-            if move is None or board.controller.submit_action("computer", *move) == "no_change":
+            if move is None:
                 computer_paused = True
+            else:
+                result = board.controller.submit_action("computer", *move)
+                sound.play_result(move[0], result)
+                if result == "no_change":
+                    computer_paused = True
         except ValueError:
             computer_paused = True
         last_ai_tick = now
@@ -243,7 +276,7 @@ while running:
 
     # AI control instructions.
     help_text = small_font.render(
-        "E/M: AI  Space: Step  A: Auto  Esc: Single  R: Restart  T: Turns",
+        "E/M: AI  Space: Step  A: Auto  Esc: Single  R: Restart  T: Turns  S: Sound",
         True,
         "black"
     )
