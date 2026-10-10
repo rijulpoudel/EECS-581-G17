@@ -6,7 +6,10 @@ This document describes the system architecture of Group 17's minesweeper game. 
 ## Overview
 This project is a 10x10 version of the puzzle game Minesweeper. It has user specified number of mines (10-20), the first click is guaranteed to be safe, the user can toggle flags, and the game automatically detects a win/loss.
 
-The [AI solver architecture](#ai-solver-architecture) extends the game with human-vs-computer and computer-only modes. Both modes now use the shared action interface, turn controller, solver, and Pygame event loop.
+The default mode is `single_player`, with optional Easy/Medium AI assistance.
+`T` starts alternating `human_vs_ai` play through the shared action interface.
+The controller also supports `ai_only` programmatically. The [timer design](Timer.md)
+describes elapsed-time tracking and includes its UML sequence diagram.
 
 ## File Layout
 The files are laid out as follows:
@@ -20,14 +23,15 @@ The files are laid out as follows:
     ├── main.py
     ├── minesweeper.py
     ├── solver.py
-    ├── __pycache__
+    ├── ai_solver.py
+    ├── timer.py
     └── README.md
 ```
 
 - `assets` folder contains the font and pngs for each cell state.
 - `docs` folder contains the system architecture and hours worked documentation.
 - `README.md` file is the readme.
-- `__pycache__` folder contains files to help python run smoother.
+- Python bytecode caches are generated locally and excluded by `.gitignore`.
 
 ## Components
 ```mermaid
@@ -50,7 +54,7 @@ flowchart TD
 
 The main code files are:
 
-- main.py: depends on `pygame`, `board.py`, `controller.py`, and `solver.py`
+- main.py: depends on `pygame`, `board.py`, `controller.py`, `solver.py`, `ai_solver.py`, and `timer.py`
 
 - board.py: depends on `pygame` and `controller.py`
 
@@ -62,18 +66,20 @@ The main code files are:
 
 ### main.py
 - Entry point of the program
-  - Initializes Pygame with a 650x700 window
+  - Initializes Pygame with a 650x650 window
   - Sets the font
-- Runs the input screen to select a mode and a valid mine count from 10 to 20
+- Runs the input screen to select a valid mine count from 10 to 20; starts in single-player
 - Creates a `GameController` and passes it to `Board`
 - Then it enters the main loop
 - The main loop handles the QUIT and `handle_click` events
   - QUIT event exits the loop
   - `handle_click` events calls either `handle_click()` or `place_flag()` method for left click and right click respectively
-- The loop attempts at most one computer action per update, with a 500 ms delay between attempts. Events and drawing continue between moves.
-- The original procedural structure is retained: `draw_input_screen()` and a setup loop, followed by the gameplay loop. An outer loop allows returning to setup. No app class is needed.
-- The gameplay loop calls `board.draw(screen)` and draws the active player or outcome, mine total, remaining flags, move count, and controls.
-- `R` resets the current game. `Esc` returns to mode selection. Solver exhaustion or errors pause computer play with a restart message.
+- Automatic AI actions run at most once per update with a 300 ms delay. Events and drawing continue between moves.
+- The procedural structure uses `draw_input_screen()` and a setup loop followed by the gameplay loop.
+- The loop draws the board, outcome or active player, controls, selected AI, and the timer when single-player assistance is off.
+- `E`/`M` selects Easy/Medium assistance using `AISolver` on the existing single-player board; `Space` steps and `A` toggles autoplay. This helper directly updates the model and does not consume controller turns.
+- `T` starts fresh alternating play using `solver.choose_move` and controller submissions. `R` resets the current mode. `Esc` disables single-player assistance on the same board, or starts a fresh single-player board when leaving alternating play. Solver exhaustion or errors pause alternating computer play with a restart message.
+- `GameTimer` observes state after each event and automatic move. It starts on the first reveal by either player, tracks time even while hidden, freezes at game over, and resets with the board.
 - Outside the loop, `pygame.quit()` is called to exit
 
 
@@ -194,17 +200,19 @@ flowchart TD
 ```
 ## AI solver architecture
 
-This section records the agreed rules and interfaces from [plan.md](../../plan.md). Both modes route gameplay actions through `GameController`.
+This section describes the controller turn modes. Alternating play routes both players through `GameController`; optional single-player `AISolver` assistance directly updates the model.
 
 ### Component responsibilities
 
 | Component | Responsibility | Status |
 | --- | --- | --- |
 | `Minesweeper` in `minesweeper.py` | Own cell state, validate actions, protect the first reveal, expand empty cells, detect terminal results, and produce visible snapshots | Implemented |
-| `GameController` in `controller.py` | Own mode, active player, winner, move count, action submission, and game reset | Connected to both modes |
+| `GameController` in `controller.py` | Own mode, active player, winner, move count, action submission, and game reset | Supports three modes |
 | `Board` in `board.py` | Convert mouse positions to cell coordinates and render model state | Human actions use the controller |
 | `main.py` | Process events, select a mode, schedule computer actions, and display turns and outcomes | Implemented |
 | `solver.py` | Choose one action using the visible-board snapshot and public mine total | Implemented |
+| `GameTimer` in `timer.py` | Track elapsed time from first reveal through game over | Displayed in single-player without assistance |
+| `AISolver` in `ai_solver.py` | Easy/Medium assistance on the current single-player model | Steps or autoplay |
 
 The runtime flow is:
 
@@ -226,7 +234,19 @@ flowchart TD
 
 ### Modes and turn rules
 
+| Mode | Session behavior | UI control |
+| --- | --- | --- |
+| `single_player` | Human keeps every turn; optional Easy/Medium assistance; timer shown with assistance off | Default; Esc disables assistance or leaves alternating play |
+| `human_vs_ai` | Human starts; successful actions alternate with the computer | T starts a fresh game |
+| `ai_only` | Computer takes every action | Controller API only |
+
 `human_vs_ai` shares one board between the human and computer. The human starts, and successful actions alternate between players. In `ai_only`, the human starts the session and the computer takes every gameplay action.
+
+`single_player` keeps the human active after successful actions. Invalid actions
+do not count as moves; a win records the human, and a loss leaves no winner.
+Optional `AISolver` assistance updates the model directly; controller move counts
+and winner attribution therefore describe controller-submitted actions only.
+The elapsed timer observes model state regardless of who reveals a cell.
 
 | Event | Human vs. computer | Computer-only |
 | --- | --- | --- |
@@ -284,7 +304,11 @@ The entry point is `choose_move(visible_board, num_mines, *, rng=None, rejected_
 
 Flags are unknown cells until clues prove their contents. When deduction stalls, the solver guesses uniformly among covered cells not proved mined. If only uncertain flags remain available, it removes one. It returns `None` when no candidate remains. The solver is not guaranteed to win or play optimally.
 
-The app pauses on `None`, a solver `ValueError`, or a repeated rejected request. Rejected actions do not count as moves and are excluded from subsequent attempts for that state. A changed board, restart, or new game clears exclusions and pause state. Tests use fixed snapshots, seeded guesses, and an independent exhaustive check of deductions on small boards.
+Alternating play pauses on `None`, a solver `ValueError`, or a rejected request.
+Rejected actions do not count as moves. Restart or a new mode clears pause state.
+The solver API accepts exclusions for other callers, but this event loop pauses
+on rejection instead of retrying. Regression tests exercise the timer and real
+Pygame event loop with deterministic ticks, events, and seeded gameplay.
 
 For each computer move, the Pygame loop:
 
@@ -301,14 +325,14 @@ Human input uses the same controller path after mouse-coordinate conversion. `Bo
 | Field | Meaning |
 | --- | --- |
 | `game` | The `Minesweeper` instance for the current session |
-| `mode` | `"human_vs_ai"` or `"ai_only"` |
+| `mode` | `"single_player"`, `"human_vs_ai"`, or `"ai_only"` |
 | `active_player` | `"human"` or `"computer"` during play; `None` after a win or loss |
 | `winner` | Winning player; `None` before the outcome or after a computer-only loss |
 | `move_count` | Successful actions, including the terminal action; excludes rejected actions |
 
 Player identity is separate from `game.won`, which records whether all safe cells were revealed. A computer-only loss has `winner = None` and `game.game_over = True`.
 
-`controller.new_game()` preserves the current mode, dimensions, and mine count. Passing `"human_vs_ai"` or `"ai_only"` selects a new mode. Reset clears the winner and move count, selects the first player for that mode, and creates a new `controller.game`. The board properties follow the new instance automatically; the app resets computer timing and rejected moves.
+`controller.new_game()` preserves the current mode, dimensions, and mine count. Passing `"single_player"`, `"human_vs_ai"`, or `"ai_only"` selects a new mode. Reset clears the winner and move count, selects the first player for that mode, and creates a new `controller.game`. The board properties follow the new instance automatically; the app resets the timer, assistance, computer timing, and pause state.
 
 ```python
 controller = GameController(num_mines=10, rows=10, cols=10, mode="human_vs_ai")

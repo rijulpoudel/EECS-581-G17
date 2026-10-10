@@ -1,9 +1,11 @@
 """
 Name: Controller.py
-Function: Manage turn and outcome rules for human-vs-AI and AI-solver logic
-External sources: ChatGPT Astra
+Function: Manage turn and outcome rules for single-player, human-vs-AI and AI-only games
+External sources: ChatGPT Astra; OpenAI Codex assisted PR review fixes
 Authors: Anh Hoang
+Maintenance: Kodai Nakae
 Date Created: 10/07/2026
+Date Last Edited: 10/10/2026
 """
 
 from minesweeper import Minesweeper
@@ -17,16 +19,16 @@ class GameController:
     def new_game(self, mode=None):
         """Reset the board and turns, retaining dimensions and mine count.
 
-        Omit mode to keep the current mode, or select 'human_vs_ai'/'ai_only'.
+        Omit mode to keep the current mode, or select 'single_player'/'human_vs_ai'/'ai_only'.
         """
         self._reset_turns(self.mode if mode is None else mode)
         self.game = Minesweeper(self.game.num_mines, self.game.rows, self.game.cols)
 
     def _reset_turns(self, mode):
-        if mode not in ("human_vs_ai", "ai_only"):
-            raise ValueError("mode must be 'human_vs_ai' or 'ai_only'")
+        if mode not in ("single_player", "human_vs_ai", "ai_only"):
+            raise ValueError("mode must be 'single_player', 'human_vs_ai', or 'ai_only'")
         self.mode = mode
-        self.active_player = "human" if mode == "human_vs_ai" else "computer"
+        self.active_player = "computer" if mode == "ai_only" else "human"
         self.winner = None
         self.move_count = 0
 

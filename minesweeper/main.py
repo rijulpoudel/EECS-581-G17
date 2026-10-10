@@ -3,15 +3,20 @@ Name: main.py
 Function: Start Minesweeper, draw the board, and handle player and computer turns.
 Inputs: Number of mines, game mode, keyboard and mouse events
 Outputs: Pygame window, win and loss status
-External sources: pygame documentation for reference, VScode Copilot
+External sources: pygame documentation for reference, VScode Copilot;
+                  OpenAI Codex assisted PR review fixes
 Authors: Mo Osby, Drew Franke, Vrishank Kulkarni, Alex Lanter
+Maintenance: Kodai Nakae
 Date Created: 09/12/2026
-Date Last Edited: 10/09/2026
+Date Last Edited: 10/10/2026
 """
 
 import pygame
 from board import Board
 from ai_solver import AISolver
+from controller import GameController
+from solver import choose_move
+from timer import GameTimer
 
 pygame.init()
 
@@ -99,7 +104,7 @@ while at_start:
 
 
 # Create the board using the inherited game.
-board = Board(10, 10, num_mines=num_mines)
+board = Board(GameController(num_mines=num_mines, rows=10, cols=10, mode="single_player"))
 
 running = True
 
@@ -110,6 +115,10 @@ ai_solver = None
 
 clock = pygame.time.Clock()
 last_ai_tick = 0
+
+# Track the whole session; AI selection only affects timer visibility.
+timer = GameTimer()
+computer_paused = False
 
 
 while running:
@@ -123,7 +132,7 @@ while running:
         if event.type == pygame.KEYDOWN:
 
             # E selects Easy AI; M selects Medium AI.
-            if event.key in (pygame.K_e, pygame.K_m):
+            if event.key in (pygame.K_e, pygame.K_m) and board.controller.mode == "single_player":
                 ai_mode = (
                     "easy" if event.key == pygame.K_e else "medium"
                 )
@@ -146,17 +155,40 @@ while running:
                 auto_play = False
                 ai_mode = "off"
                 ai_solver = None
+                if board.controller.mode != "single_player":
+                    board.controller.new_game("single_player")
+                    timer.reset()
+                computer_paused = False
+
+            # R restarts this mode; T starts a fresh alternating-turn game.
+            elif event.key in (pygame.K_r, pygame.K_t):
+                mode = "human_vs_ai" if event.key == pygame.K_t else None
+                board.controller.new_game(mode)
+                timer.reset()
+                auto_play = False
+                ai_mode = "off"
+                ai_solver = None
+                computer_paused = False
+                last_ai_tick = pygame.time.get_ticks()
 
         # ORIGINAL MANUAL GAMEPLAY
         if event.type == pygame.MOUSEBUTTONDOWN:
 
             # Left click reveals a cell.
             if event.button == 1:
-                board.handle_click(*event.pos)
+                result = board.handle_click(*event.pos)
 
             # Right click toggles a flag.
             elif event.button == 3:
-                board.place_flag(*event.pos)
+                result = board.place_flag(*event.pos)
+            else:
+                result = "no_change"
+
+            if result == "changed" and board.controller.active_player == "computer":
+                last_ai_tick = pygame.time.get_ticks()
+
+        # Observe every action, including AI steps and terminal events.
+        timer.update(board.game, pygame.time.get_ticks())
 
     # AUTOMATIC AI EXECUTION
     # Run one AI move every 300 milliseconds.
@@ -171,16 +203,36 @@ while running:
 
         last_ai_tick = now
 
+    # Alternating mode uses visible snapshots and submits every AI action
+    # through the controller, so turn ownership and outcomes stay consistent.
+    if (board.controller.active_player == "computer" and not computer_paused
+            and not board.game.game_over and now - last_ai_tick >= 300):
+        try:
+            move = choose_move(board.game.get_visible_board(), board.game.num_mines)
+            if move is None or board.controller.submit_action("computer", *move) == "no_change":
+                computer_paused = True
+        except ValueError:
+            computer_paused = True
+        last_ai_tick = now
+
+    timer.update(board.game, pygame.time.get_ticks())
+
     # Draw the game board.
     screen.fill("white")
     board.draw(screen)
 
     # Display game status.
     if board.game.game_over:
-        if board.game.won:
+        if board.controller.mode == "human_vs_ai":
+            status_text = font.render(f"Winner: {board.controller.winner.title()}", True, "green")
+        elif board.game.won:
             status_text = font.render("Victory!", True, "green")
         else:
             status_text = font.render("Game Over!", True, "red")
+    elif computer_paused:
+        status_text = font.render("AI paused - R: Restart", True, "black")
+    elif board.controller.mode == "human_vs_ai":
+        status_text = font.render(f"Turn: {board.controller.active_player.title()}", True, "black")
     else:
         status_text = font.render("Playing", True, "black")
 
@@ -191,19 +243,26 @@ while running:
 
     # AI control instructions.
     help_text = small_font.render(
-        "E: Easy  M: Medium  Space: Step  A: Auto  Esc: Off",
+        "E/M: AI  Space: Step  A: Auto  Esc: Single  R: Restart  T: Turns",
         True,
         "black"
     )
-    screen.blit(help_text, (175, 585))
+    screen.blit(help_text, (25, 585))
 
     # Show the currently selected AI mode.
     mode_text = small_font.render(
-        f"AI: {ai_mode.title()}" + (" (auto)" if auto_play else ""),
+        ("Mode: Human vs AI" if board.controller.mode == "human_vs_ai"
+         else f"AI: {ai_mode.title()}" + (" (auto)" if auto_play else "")),
         True,
         "black"
     )
     screen.blit(mode_text, (330, 615))
+
+    # Show the timer in Single Play only.
+    if board.controller.mode == "single_player" and ai_mode == "off":
+        timer_text = small_font.render(f"Time: {timer.elapsed // 1000}s", True, "black")
+        screen.blit(timer_text, (25, 615))
+
 
     pygame.display.flip()
     clock.tick(60)
