@@ -25,6 +25,7 @@ The files are laid out as follows:
     ├── solver.py
     ├── ai_solver.py
     ├── timer.py
+    ├── sound.py
     └── README.md
 ```
 
@@ -49,6 +50,7 @@ flowchart TD
 - Game Logic: Implemented by `Minesweeper`
 - User Interface: Implemented by `Board.draw`, `draw_input_screen`, and the drawing code in `main.py`
 - Input Handler: Implemented by `main.py` event loop, `Board.handle_click`, and `Board.place_flag`
+- Sound: Implemented by `SoundManager` in `sound.py` (custom feature); `main.py` reports each action result to it
 
 ## Code Structure
 
@@ -63,6 +65,8 @@ The main code files are:
 - controller.py: depends on `minesweeper.py`; manages turns and outcomes independently of Pygame
 
 - solver.py: depends on `random`; chooses actions from a visible-board snapshot and public mine total
+
+- sound.py: depends on `pygame`, `array`, `math`, and `random`; synthesizes and plays the sound effects and the background music loop (custom feature)
 
 ### main.py
 - Entry point of the program
@@ -340,6 +344,10 @@ result = controller.submit_action("human", "reveal", 0, 0)
 controller.new_game()  # Keep the current mode and board configuration.
 controller.new_game("ai_only")  # Start a new board with the computer active.
 ```
+
+## Custom Feature: Sound and Music
+
+Sound effects (reveal, flag, mine hit, win) and a looping background melody, synthesized in code and played through `pygame.mixer`. Press `S` to toggle sound. See [CustomFeature_Sound.md](CustomFeature_Sound.md) for the description and UML diagrams.
 
 ## Asset Attributes
 
