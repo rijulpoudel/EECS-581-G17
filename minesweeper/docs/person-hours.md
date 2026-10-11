@@ -19,8 +19,21 @@ We estimated the workload based on the complexity of each task, the condition of
 The total estimated effort is **120 person-hours**, equivalent to approximately **17 hours per member**. 
 **Estimate prepared:** October 11, 2026.
 
-This date reflects when the estimate was written, not necessarily when project work began.
+### Personal hours:
 
+| Date | Member | Work completed or pending confirmation | Estimated hours |
+|---|---|---|---:|
+| 2026-10-06 | Anh Hoang | Added visible-board state and improved first-click handling | 2 |
+| 2026-10-07 | Anh Hoang | Implemented controller and solver, integrated gameplay, and updated documentation | 5 |
+| 2026-10-11 | Anh Hoang | Updated person-hours documentation and README | 1 |
+| 2026-10-11 | Mariska | Test game and make sure | 8 |
+| 2026-10-11 | Sreeja | Test games and make sure all the features are completed | 8 |
+| 2026-09-28 | Rijul Poudel | Cleaned tracked bytecode and added Git ignore rules | 1 |
+| 2026-10-10 | Rijul Poudel | Implemented sound effects, music, mute controls, tests, and UML documentation | 7 |
+| 2026-10-07 | Montaha | UI design for the menu selection | 8 |
+| 2026-10-10 | Kodai Nakae | Implemented timer, fixed gameplay integration, and added tests and documentation | 8 |
+| 2026-10-09 | Shayaan | Implemented Easy/Medium AI and keyboard/autoplay controls | 8 |
+| **Total** | | | **70** |
 
 ### Totals by member
 
