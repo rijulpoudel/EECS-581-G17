@@ -7,7 +7,7 @@ External sources: pygame documentation for reference, VScode Copilot;
                   OpenAI Codex assisted PR review fixes; sound integration
                   assisted by Hermes Agent (Nous Research), 10/10/2026
 Authors: Mo Osby, Drew Franke, Vrishank Kulkarni, Alex Lanter
-Maintenance: Kodai Nakae, Rijul Poudel
+Maintenance: Kodai Nakae, Mariska Rai, Rijul Poudel
 Date Created: 09/12/2026
 Date Last Edited: 10/10/2026
 """
@@ -182,7 +182,7 @@ def start_mode(mode):
     timer.reset()
     ai_solver = (
         AISolver(board.game, selected_ai)
-        if selected_ai in ("easy", "medium") else None
+        if selected_ai in ("easy", "medium", "hard") else None
     )
     auto_play = False
     computer_paused = False
@@ -294,7 +294,7 @@ while running:
     if (board.controller.active_player == "computer" and not computer_paused
             and not board.game.game_over and now - last_ai_tick >= 300):
         try:
-            if ai_mode in ("easy", "medium"):
+            if ai_mode in ("easy", "medium", "hard"):
                 if ai_solver is None or ai_solver.game is not board.game:
                     ai_solver = AISolver(board.game, ai_mode)
                 action = ai_solver.choose_action()
