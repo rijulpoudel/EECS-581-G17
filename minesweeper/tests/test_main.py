@@ -98,15 +98,17 @@ class EventLoopTests(unittest.TestCase):
         self.assertEqual(result["ai_mode"], "off")
         self.assertIsNone(result["ai_solver"])
 
-    def test_autoplay_first_reveal_is_timed(self):
-        def after_auto(state):
+    def test_ai_only_first_reveal_is_timed(self):
+        def after_ai_only(state):
+            self.assertEqual(state["board"].controller.mode, "ai_only")
             self.assertFalse(state["board"].game.first_click)
             self.assertIsNotNone(state["timer"].start)
-            return [self.key(pygame.K_ESCAPE)]
+            return []
 
         result = self.run_game([
             lambda _: [self.key(pygame.K_m), self.key(pygame.K_a)],
-            lambda _: [], after_auto,
+            lambda _: [],
+            after_ai_only,
         ])
         self.assertFalse(result["auto_play"])
         self.assertGreater(result["timer"].elapsed, 0)
@@ -158,8 +160,11 @@ class EventLoopTests(unittest.TestCase):
         self.assertGreater(elapsed[0], 0)
         self.assertEqual(result["timer"].elapsed, elapsed[0])
 
-    def test_autoplay_terminal_reveal_freezes_hidden_time(self):
+    def test_ai_only_terminal_reveal_freezes_hidden_time(self):
         elapsed = []
+
+        def start_ai_only(state):
+            return [self.key(pygame.K_a)]
 
         def prepare_loss(state):
             # The real solver must reveal the only available covered cell.
@@ -171,16 +176,21 @@ class EventLoopTests(unittest.TestCase):
                              if (col, row) != (9, 9)}
             game.calculate_adjacent()
             state["timer"].update(game, 800)
-            return [self.key(pygame.K_e), self.key(pygame.K_a)]
+            return []
 
         def after_loss(state):
             self.assertTrue(state["board"].game.game_over)
             self.assertTrue(state["timer"].stopped)
             elapsed.append(state["timer"].elapsed)
-            return [self.key(pygame.K_ESCAPE)]
+            return []
 
-        result = self.run_game([prepare_loss, lambda _: [], after_loss])
-        self.assertEqual(result["ai_mode"], "off")
+        result = self.run_game([
+            lambda _: [self.key(pygame.K_e)],
+            start_ai_only,
+            prepare_loss,
+            after_loss,
+        ])
+        self.assertFalse(result["auto_play"])
         self.assertEqual(result["timer"].elapsed, elapsed[0])
 
 

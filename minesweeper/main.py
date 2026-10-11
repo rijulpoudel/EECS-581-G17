@@ -26,8 +26,17 @@ screen = pygame.display.set_mode((650, 650))
 font = pygame.font.Font("assets/ThaleahFat.ttf", 32)
 small_font = pygame.font.Font("assets/ThaleahFat.ttf", 16)
 
+mode_names = {
+    "human_vs_ai": "Human vs. computer",
+    "ai_only": "Computer solves alone",
+}
+mode_buttons = {
+    "human_vs_ai": pygame.Rect(100, 435, 450, 50),
+    "ai_only": pygame.Rect(100, 500, 450, 50),
+}
 
-def draw_input_screen(user_input, error):
+
+def draw_input_screen(user_input, error, selected_mode):
     # Display the input screen for the number of mines.
     # Original function written with help from VSCode Copilot.
     screen.fill("white")
@@ -63,6 +72,16 @@ def draw_input_screen(user_input, error):
         (650 // 2 - hint.get_width() // 2, 380)
     )
 
+    # Mode buttons on the setup screen. Single-player remains the default
+    # when no mode is selected, preserving the inherited behavior.
+    for mode, button in mode_buttons.items():
+        color = "lightblue" if mode == selected_mode else "lightgray"
+        pygame.draw.rect(screen, color, button)
+        pygame.draw.rect(screen, "black", button, 2)
+        label = mode_names[mode] + (" [T]" if mode == "human_vs_ai" else " [A]")
+        text = small_font.render(label, True, "black")
+        screen.blit(text, (650 // 2 - text.get_width() // 2, button.y + 16))
+
     # Error handling.
     if error:
         error_text = small_font.render(error, True, "red")
@@ -91,10 +110,11 @@ def play_ai_step(game, step):
 user_input = ""
 error = ""
 at_start = True
+selected_mode = "single_player"
 
 # Game setup screen.
 while at_start:
-    draw_input_screen(user_input, error)
+    draw_input_screen(user_input, error, selected_mode)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -102,6 +122,12 @@ while at_start:
             exit()
 
         if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_t:
+                selected_mode = "human_vs_ai"
+                error = ""
+            elif event.key == pygame.K_a:
+                selected_mode = "ai_only"
+                error = ""
             if event.key == pygame.K_RETURN:
                 if user_input.isdigit() and 10 <= int(user_input) <= 20:
                     num_mines = int(user_input)
@@ -118,11 +144,20 @@ while at_start:
                 user_input += event.unicode
                 error = ""
 
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            for mode, button in mode_buttons.items():
+                if button.collidepoint(event.pos):
+                    selected_mode = mode
 
 # Create the board using the inherited game.
 sound = SoundManager()
 sound.start_music()
-board = Board(GameController(num_mines=num_mines, rows=10, cols=10, mode="single_player"))
+board = Board(GameController(
+    num_mines=num_mines,
+    rows=10,
+    cols=10,
+    mode=selected_mode,
+))
 
 running = True
 
@@ -139,6 +174,21 @@ timer = GameTimer()
 computer_paused = False
 
 
+def start_mode(mode):
+    """Start a fresh game while preserving the selected AI difficulty."""
+    global ai_mode, ai_solver, auto_play, computer_paused, last_ai_tick
+    selected_ai = ai_mode
+    board.controller.new_game(mode)
+    timer.reset()
+    ai_solver = (
+        AISolver(board.game, selected_ai)
+        if selected_ai in ("easy", "medium") else None
+    )
+    auto_play = False
+    computer_paused = False
+    last_ai_tick = pygame.time.get_ticks()
+
+
 while running:
     # Main game event loop.
     for event in pygame.event.get():
@@ -149,20 +199,24 @@ while running:
         # AI KEYBOARD CONTROLS
         if event.type == pygame.KEYDOWN:
 
-            # E selects Easy AI; M selects Medium AI.
-            if event.key in (pygame.K_e, pygame.K_m) and board.controller.mode == "single_player":
-                ai_mode = (
-                    "easy" if event.key == pygame.K_e else "medium"
-                )
+            # A starts AI-only mode. T starts human-vs-AI turns.
+            if event.key == pygame.K_a:
+                start_mode("ai_only")
+                continue
 
-                # Both AI difficulties operate on the existing board.
-                ai_solver = AISolver(board.game, ai_mode)
-                auto_play = False
-
-            # A toggles automatic AI gameplay.
-            elif event.key == pygame.K_a and ai_solver is not None:
-                auto_play = not auto_play
-                last_ai_tick = pygame.time.get_ticks()
+            # E/M/H select the AI difficulty. In an AI mode, restart that
+            # mode so the new difficulty is applied immediately.
+            if event.key in (pygame.K_e, pygame.K_m, pygame.K_h):
+                ai_mode = {
+                    pygame.K_e: "easy",
+                    pygame.K_m: "medium",
+                    pygame.K_h: "hard",
+                }[event.key]
+                if board.controller.mode == "single_player":
+                    ai_solver = AISolver(board.game, ai_mode)
+                    auto_play = False
+                else:
+                    start_mode(board.controller.mode)
 
             # SPACE executes one AI action.
             elif event.key == pygame.K_SPACE and ai_solver is not None:
@@ -178,16 +232,20 @@ while running:
                     timer.reset()
                 computer_paused = False
 
-            # R restarts this mode; T starts a fresh alternating-turn game.
-            elif event.key in (pygame.K_r, pygame.K_t):
-                mode = "human_vs_ai" if event.key == pygame.K_t else None
-                board.controller.new_game(mode)
-                timer.reset()
-                auto_play = False
-                ai_mode = "off"
-                ai_solver = None
-                computer_paused = False
-                last_ai_tick = pygame.time.get_ticks()
+            # R restarts the current mode; T starts human-vs-AI turns.
+            elif event.key == pygame.K_t:
+                start_mode("human_vs_ai")
+            elif event.key == pygame.K_r:
+                if board.controller.mode == "single_player":
+                    board.controller.new_game()
+                    timer.reset()
+                    auto_play = False
+                    ai_mode = "off"
+                    ai_solver = None
+                    computer_paused = False
+                    last_ai_tick = pygame.time.get_ticks()
+                else:
+                    start_mode(board.controller.mode)
 
             # S toggles sound on and off.
             elif event.key == pygame.K_s:
@@ -236,7 +294,17 @@ while running:
     if (board.controller.active_player == "computer" and not computer_paused
             and not board.game.game_over and now - last_ai_tick >= 300):
         try:
-            move = choose_move(board.game.get_visible_board(), board.game.num_mines)
+            if ai_mode in ("easy", "medium"):
+                if ai_solver is None or ai_solver.game is not board.game:
+                    ai_solver = AISolver(board.game, ai_mode)
+                action = ai_solver.choose_action()
+                move = (
+                    (action[0], action[1][0], action[1][1])
+                    if action is not None else None
+                )
+            else:
+                move = choose_move(board.game.get_visible_board(), board.game.num_mines)
+
             if move is None:
                 computer_paused = True
             else:
@@ -256,8 +324,10 @@ while running:
 
     # Display game status.
     if board.game.game_over:
-        if board.controller.mode == "human_vs_ai":
-            status_text = font.render(f"Winner: {board.controller.winner.title()}", True, "green")
+        if board.controller.mode == "human_vs_ai" and board.controller.winner:
+            status_text = font.render(
+                f"Winner: {board.controller.winner.title()}", True, "green"
+            )
         elif board.game.won:
             status_text = font.render("Victory!", True, "green")
         else:
@@ -274,27 +344,36 @@ while running:
         (650 // 2 - status_text.get_width() // 2, 550)
     )
 
-    # AI control instructions.
-    help_text = small_font.render(
-        "E/M: AI  Space: Step  A: Auto  Esc: Single  R: Restart  T: Turns  S: Sound",
+    # AI control instructions. Split across two centered lines so the
+    # controls stay inside the 650-pixel window.
+    controls_top = small_font.render(
+        "E/M/H: AI Assist    A: AI Only    T: AI Turns",
         True,
         "black"
     )
-    screen.blit(help_text, (25, 585))
+    controls_bottom = small_font.render(
+        "Space: Step    Esc: Single    R: Restart    S: Sound",
+        True,
+        "black"
+    )
+    screen.blit(controls_top, controls_top.get_rect(center=(325, 590)))
+    screen.blit(controls_bottom, controls_bottom.get_rect(center=(325, 610)))
 
     # Show the currently selected AI mode.
-    mode_text = small_font.render(
-        ("Mode: Human vs AI" if board.controller.mode == "human_vs_ai"
-         else f"AI: {ai_mode.title()}" + (" (auto)" if auto_play else "")),
-        True,
-        "black"
-    )
-    screen.blit(mode_text, (330, 615))
+    selected_ai_label = ai_mode.title() if ai_mode != "off" else "Default"
+    if board.controller.mode == "human_vs_ai":
+        mode_label = f"Mode: AI Turns ({selected_ai_label})"
+    elif board.controller.mode == "ai_only":
+        mode_label = f"Mode: AI Only ({selected_ai_label})"
+    else:
+        mode_label = f"Mode: Single Player ({selected_ai_label} Assist)"
+    mode_text = small_font.render(mode_label, True, "black")
+    screen.blit(mode_text, (330, 635))
 
     # Show the timer in Single Play only.
     if board.controller.mode == "single_player" and ai_mode == "off":
         timer_text = small_font.render(f"Time: {timer.elapsed // 1000}s", True, "black")
-        screen.blit(timer_text, (25, 615))
+        screen.blit(timer_text, (25, 635))
 
 
     pygame.display.flip()

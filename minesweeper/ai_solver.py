@@ -13,11 +13,11 @@ import random
 
 
 class AISolver:
-    """Perform one Easy or Medium action per step on the existing game."""
+    """Perform one Easy, Medium, or Hard action per step on the game."""
 
     def __init__(self, game, difficulty="easy", rng=None):
-        if difficulty.lower() not in ("easy", "medium"):
-            raise ValueError("Difficulty must be 'easy' or 'medium'")
+        if difficulty.lower() not in ("easy", "medium", "hard"):
+            raise ValueError("Difficulty must be 'easy', 'medium', or 'hard'")
         self.game = game
         self.difficulty = difficulty.lower()
         self.rng = rng if rng is not None else random.Random()
@@ -70,8 +70,60 @@ class AISolver:
         self.game.flags.add(cell)
         return ("flag", cell)
 
-    def step(self):
-        """Make one move, preferring certain mines, then safe moves, then random.
+    def _one_two_one_action(self):
+        """Return a move from a visible horizontal or vertical 1-2-1 pattern."""
+        revealed = self.game.revealed
+        clues = self.game.adjacent_mines
+
+        # Check both orientations and both sides of each clue sequence.
+        for horizontal in (True, False):
+            for row in range(self.game.rows):
+                for col in range(self.game.cols):
+                    if horizontal:
+                        cells = [(col + i, row) for i in range(3)]
+                    else:
+                        cells = [(col, row + i) for i in range(3)]
+
+                    if any(
+                        x < 0 or x >= self.game.cols or y < 0 or y >= self.game.rows
+                        for x, y in cells
+                    ):
+                        continue
+                    if any(cell not in revealed for cell in cells):
+                        continue
+                    if [clues.get(cell) for cell in cells] != [1, 2, 1]:
+                        continue
+
+                    for side in (-1, 1):
+                        if horizontal:
+                            hidden = [(col + i, row + side) for i in range(3)]
+                        else:
+                            hidden = [(col + side, row + i) for i in range(3)]
+
+                        if any(
+                            x < 0 or x >= self.game.cols or y < 0 or y >= self.game.rows
+                            for x, y in hidden
+                        ):
+                            continue
+                        if any(
+                            cell in revealed for cell in hidden
+                        ):
+                            continue
+                        if hidden[1] in self.game.flags:
+                            continue
+
+                        # Flag each outer cell first, then reveal the safe
+                        # middle cell once both mines are marked.
+                        if hidden[0] not in self.game.flags:
+                            return ("flag", hidden[0])
+                        if hidden[2] not in self.game.flags:
+                            return ("flag", hidden[2])
+                        return ("reveal", hidden[1])
+
+        return None
+
+    def choose_action(self):
+        """Choose one move without changing the game state.
 
         A clue with N mines and F adjacent flags has N-F mines remaining.
         If all U unflagged covered neighbors are mines (U == N-F), flag one.
@@ -79,11 +131,15 @@ class AISolver:
         Inconsistent flags (F > N) produce no logical deduction.
         """
 
-        # Stop if the player or AI has already won or lost.
         if self.game.game_over:
             return None
 
-        if self.difficulty == "medium":
+        if self.difficulty == "hard":
+            pattern_action = self._one_two_one_action()
+            if pattern_action is not None:
+                return pattern_action
+
+        if self.difficulty in ("medium", "hard"):
             clues = sorted(self.game.revealed)
 
             # Check revealed numbers for guaranteed mines.
@@ -98,10 +154,8 @@ class AISolver:
                 # If every remaining covered neighbor must be a mine,
                 # flag one of those neighbors.
                 if unknown and remaining > 0 and remaining == len(unknown):
-                    action = self._flag(unknown[0])
-
-                    if action is not None:
-                        return action
+                    if len(self.game.flags) < self.game.num_mines:
+                        return ("flag", unknown[0])
 
             # Check revealed numbers for guaranteed safe neighbors.
             for cell in clues:
@@ -112,7 +166,7 @@ class AISolver:
                 # If all mines indicated by this number are already
                 # flagged, the other covered neighbors are safe.
                 if unknown and flagged == number:
-                    return self._reveal(unknown[0])
+                    return ("reveal", unknown[0])
 
         # Choose randomly from covered cells that are not flagged.
         options = self.available_cells()
@@ -121,4 +175,17 @@ class AISolver:
         if not options:
             return None
 
-        return self._reveal(self.rng.choice(options))
+        return ("reveal", self.rng.choice(options))
+
+    def step(self):
+        """Choose and apply one Easy or Medium move."""
+        action = self.choose_action()
+        if action is None:
+            return None
+
+        name, cell = action
+        if name == "flag":
+            self._flag(cell)
+        else:
+            self._reveal(cell)
+        return action
