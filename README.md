@@ -34,5 +34,18 @@ When you start up the game, you first have to enter the number of mines you want
 
 Then, use left click to uncover spaces and right click to toggle flags. Right click again to remove flags that have been placed. 
 
-## System Architecture Documentation
+Single-player starts by default. The timer starts on the first reveal and stops
+on a win or loss. E/M selects Easy/Medium AI assistance on the same board;
+Space performs one AI action and A toggles automatic actions. The timer is hidden
+while assistance is selected, but keeps tracking the session. Esc disables
+assistance and shows the elapsed time again.
+
+R restarts the current mode with the same mine count and resets the timer.
+T starts a fresh human-vs-AI game: successful human and computer actions
+alternate, with the human going first. E/M assistance is available only in
+single-player. Esc leaves alternating play and starts a fresh single-player game.
+
+See [the timer design and UML sequence diagram](minesweeper/docs/Timer.md).
+
+## System Architecture Documentation with AI solver updated
 [Link to page](minesweeper/docs/SystemArchitecture.md)

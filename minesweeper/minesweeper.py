@@ -5,8 +5,9 @@ Inputs: None
 Outputs: None
 External sources: VScode Copilot
 Authors: Drew Franke, Alex Lanter, Mo Osby
+Maintenance: Anh Hoang
 Date Created: 09/13/2026
-Date Last Edited: 09/20/2026
+Date Last Edited: 10/06/2026
 """
 import random
 
@@ -57,6 +58,47 @@ class Minesweeper:
 
                 self.adjacent_mines[(col, row)] = count #add found count to dictionary
 
+    def apply_action(self, action, col, row):
+        """Apply a reveal, flag, or unflag at the exact location of (col, row) for AI solver or multi-turn play
+
+        Return 'no_change', 'changed', 'won', or 'lost'. Flag placement
+        never toggles an existing flag. Rejected actions preserve state.
+        """
+        if not isinstance(action, str) or action not in ("reveal", "flag", "unflag"):
+            return "no_change"
+        # Booleans are not board coordinates, despite being int subclasses.
+        if type(col) is not int or type(row) is not int:
+            return "no_change"
+        if not (0 <= col < self.cols and 0 <= row < self.rows):
+            return "no_change"
+        if self.game_over:
+            return "no_change"
+
+        cell = (col, row)
+        if cell in self.revealed:
+            return "no_change"
+
+        if action == "flag":
+            if cell in self.flags or len(self.flags) >= self.num_mines:
+                return "no_change"
+            self.flags.add(cell)
+            return "changed"
+
+        if action == "unflag":
+            if cell not in self.flags:
+                return "no_change"
+            self.flags.remove(cell)
+            return "changed"
+
+        if cell in self.flags:
+            return "no_change"
+        if self.first_click:
+            self.place_mines(col, row)
+        self.reveal_cell(col, row)
+        if self.game_over:
+            return "won" if self.won else "lost"
+        return "changed"
+
     def reveal_cell(self, col, row): #Copilot assisted for recursion
         if (col, row) in self.flags:
             return True
@@ -83,3 +125,22 @@ class Minesweeper:
             self.game_over = True
             self.won = True
         return True
+
+    def get_visible_board(self):
+        """ Return a board of visible information so computer or AI can process """
+        matrix = []
+        #iterate through all the cell. if cell is visible, add to the matrix
+        for row in range(self.rows):
+            visible_row = []
+            for col in range(self.cols):
+                cell = (col, row)
+                if cell in self.revealed:
+                    value = self.adjacent_mines[cell]
+                elif cell in self.flags:
+                    value = "flagged"
+                else:
+                    value = "covered"
+                visible_row.append(value)
+            matrix.append(visible_row)
+
+        return matrix
