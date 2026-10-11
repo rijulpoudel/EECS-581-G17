@@ -16,7 +16,7 @@ A 10x10 version of the classic puzzle game Minesweeper, extended with an AI solv
 - Setup screen: pick a mode — Single Player (default), Human vs. AI (`T`), AI Only (`A`) — then type a mine count (10-20) and press Enter.
 - Left click uncovers a cell; right click toggles a flag.
 - In game: `E` / `M` / `H` = Easy / Medium / Hard AI assist · `Space` = one AI step · `A` = AI-only mode · `T` = human-vs-AI turns · `R` = restart · `Esc` = single player · `S` = sound on/off.
-- The timer runs in single-player with AI assistance off.
+- The timer runs in single-player with AI assistance off: it starts on the first reveal, freezes at a win or loss, and keeps tracking while assistance is active (display hidden until `Esc`).
 
 ## Documentation
 

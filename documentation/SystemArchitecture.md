@@ -1,12 +1,12 @@
 # System Architecture
 This document describes the system architecture of Group 17's minesweeper game. It is intended for both the GTA and the Project 2 team.
 
-[Link back to README](../../README.md)
+[Link back to README](../README.md)
 
 ## Overview
 This project is a 10x10 version of the puzzle game Minesweeper. It has user specified number of mines (10-20), the first click is guaranteed to be safe, the user can toggle flags, and the game automatically detects a win/loss.
 
-The default mode is `single_player`, with optional Easy/Medium AI assistance.
+The default mode is `single_player`, with optional Easy/Medium/Hard AI assistance.
 `T` starts alternating `human_vs_ai` play through the shared action interface.
 The controller also supports `ai_only` programmatically. The [timer design](Timer.md)
 describes elapsed-time tracking and includes its UML sequence diagram.
@@ -15,22 +15,28 @@ describes elapsed-time tracking and includes its UML sequence diagram.
 The files are laid out as follows:
 ```
 .
+├── README.md
+├── documentation
+│   ├── SystemArchitecture.md
+│   ├── Timer.md
+│   ├── CustomFeature_Sound.md
+│   ├── person-hours.md
+│   └── Team17_meeting_log.pdf
 └── minesweeper
     ├── assets
+    ├── ai_solver.py
     ├── board.py
     ├── controller.py
-    ├── docs
     ├── main.py
     ├── minesweeper.py
     ├── solver.py
-    ├── ai_solver.py
-    ├── timer.py
     ├── sound.py
-    └── README.md
+    ├── timer.py
+    └── tests
 ```
 
 - `assets` folder contains the font and pngs for each cell state.
-- `docs` folder contains the system architecture and hours worked documentation.
+- `documentation` folder (repository root) contains the system architecture, feature documentation, and person-hours records.
 - `README.md` file is the readme.
 - Python bytecode caches are generated locally and excluded by `.gitignore`.
 
