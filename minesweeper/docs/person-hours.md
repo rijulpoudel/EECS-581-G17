@@ -21,7 +21,7 @@ The total estimated effort is **120 person-hours**, equivalent to approximately 
 
 ### Personal hours:
 
-| Date | Member | Work completed or pending confirmation | Estimated hours |
+| Date | Member | Work completed | Actual hours |
 |---|---|---|---:|
 | 2026-10-06 | Anh Hoang | Added visible-board state and improved first-click handling | 2 |
 | 2026-10-07 | Anh Hoang | Implemented controller and solver, integrated gameplay, and updated documentation | 5 |
@@ -33,7 +33,7 @@ The total estimated effort is **120 person-hours**, equivalent to approximately 
 | 2026-10-07 | Montaha | UI design for the menu selection | 8 |
 | 2026-10-10 | Kodai Nakae | Implemented timer, fixed gameplay integration, and added tests and documentation | 8 |
 | 2026-10-09 | Shayaan | Implemented Easy/Medium AI and keyboard/autoplay controls | 8 |
-| **Total** | | | **70** |
+| **Total** | | | **56** |
 
 ### Totals by member
 
@@ -41,12 +41,12 @@ Update these totals using the actual daily entries. Totals are calculated manual
 
 | Member's full name | Actual person-hours |
 |---|---|
-| Anh | 10 |
-| Mariska | 10 |
-| Sreeja | 10 |
-| Rijuh | 10 |
-| Montaha | 10 |
-| Kodai | 10 |
-| Shayaan | 10 |
-| **Team total** | **70** |
+| Anh Hoang | 8 |
+| Mariska Rai | 8 |
+| Sreeja | 8 |
+| Rijul Poudel | 8 |
+| Montaha | 8 |
+| Kodai Nakae | 8 |
+| Shayaan | 8 |
+| **Team total** | **56** |
 
