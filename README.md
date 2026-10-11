@@ -47,5 +47,5 @@ single-player. Esc leaves alternating play and starts a fresh single-player game
 
 See [the timer design and UML sequence diagram](minesweeper/docs/Timer.md).
 
-## System Architecture Documentation
+## System Architecture Documentation with AI solver updated
 [Link to page](minesweeper/docs/SystemArchitecture.md)

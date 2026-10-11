@@ -1,60 +1,39 @@
-# Project 2 person-hours
-
-Use this file for the team's estimated effort and each member's actual daily hours. Replace bracketed placeholders, add rows as needed, and keep the completed file on the submitted branch.
-
-One person-hour means one person working for one hour. A one-hour meeting attended by four members totals four person-hours. Each attendee records their own time.
-
-## Estimated person-hours
-
-Estimate prepared on: [YYYY-MM-DD]
-
-Prepared by: [Full names]
-
 ### Estimation methodology
 
-[Explain how the team estimated effort. Consider the inherited code's condition, task complexity, members' experience, testing, documentation, and meetings. State any assumptions or allowance for unexpected work.]
+We estimated the workload based on the complexity of each task, the condition of the inherited code, and the expected time required for implementation, integration, and testing. AI difficulty levels were estimated separately, with Hard AI requiring the most development time. We also included time for debugging, documentation, and team meetings.
 
 | Task | Responsible member(s) | Estimated person-hours | Basis for estimate |
-| --- | --- | --- | --- |
-| Understand inherited code and identify bugs | [Names] | [Hours] | [Reasoning] |
-| Complete or fix Project 1 functionality | [Names] | [Hours] | [Reasoning] |
-| Implement Easy AI | [Names] | [Hours] | [Reasoning] |
-| Implement Medium AI | [Names] | [Hours] | [Reasoning] |
-| Implement Hard AI | [Names] | [Hours] | [Reasoning] |
-| Integrate AI with gameplay | [Names] | [Hours] | [Reasoning] |
-| Implement custom feature and UML diagram | [Names] | [Hours] | [Reasoning] |
-| Test and fix bugs | [Names] | [Hours] | [Reasoning] |
-| Write system documentation and code comments | [Names] | [Hours] | [Reasoning] |
-| Team meetings | [Names] | [Hours] | [Meeting count x duration x attendees] |
-| Other: [Describe or remove] | [Names] | [Hours] | [Reasoning] |
-| **Total** | | **[Sum]** | |
+|---|---|---:|---|
+| Understand inherited code and identify bugs | All members | 12 | Review code structure, run existing functionality, identify issues |
+| Complete or fix Project 1 functionality | 2 members | 16 | Fix inherited bugs and incomplete features |
+| Implement Easy AI | 1 member | 6 | Basic decision-making logic |
+| Implement Medium AI | 1 member | 10 | More advanced strategies and decision rules |
+| Implement Hard AI | 2 members | 18 | Complex strategy, optimization, and edge cases |
+| Integrate AI with gameplay | 2 members | 10 | Connect AI logic to existing game flow |
+| Implement custom feature and UML diagram | 2 members | 12 | Feature implementation and UML design |
+| Test and fix bugs | All members | 16 | Unit testing, gameplay testing, and debugging |
+| Write system documentation and code comments | All members | 8 | Document architecture, features, and important methods |
+| Team meetings | All members | 12 | 4 meetings × 1 hour × 3 members |
+| **Total** | | **120** | |
 
-Enter the combined effort of all members for each task. Avoid counting the same work in multiple rows. Record the date honestly if this estimate is prepared after work has begun.
+The total estimated effort is **120 person-hours**, equivalent to approximately **17 hours per member**. 
+**Estimate prepared:** October 11, 2026.
 
-## Actual daily person-hours
+This date reflects when the estimate was written, not necessarily when project work began.
 
-Each member adds their own entries for each day worked. Use multiple rows when helpful to separate activities.
-
-- Enter your full name, date, specific work completed, and hours in decimals. For example, 30 minutes is 0.5 hours.
-- Count coding, testing, meetings, and documentation. Exclude EECS 581 lectures.
-- Record actual time. Do not copy estimates into this log or invent missing hours.
-- For shared work, each member records only their own time.
-- Differences between estimated and actual hours are not penalized by the assignment. Incomplete or fabricated accounting is penalized.
-
-| Date | Member's full name | Activity category | Work completed | Actual hours |
-| --- | --- | --- | --- | --- |
-| [YYYY-MM-DD] | [Full name] | [Coding / testing / meeting / documentation] | [Describe specific work] | [Hours] |
-| [YYYY-MM-DD] | [Full name] | [Category] | [Describe specific work] | [Hours] |
-| [YYYY-MM-DD] | [Full name] | [Category] | [Describe specific work] | [Hours] |
-| [YYYY-MM-DD] | [Full name] | [Category] | [Describe specific work] | [Hours] |
 
 ### Totals by member
 
-Add one row for every team member. Update these totals from the daily log. Totals are calculated manually in this Markdown file.
+Update these totals using the actual daily entries. Totals are calculated manually in this Markdown file.
 
 | Member's full name | Actual person-hours |
-| --- | --- |
-| [Full name] | [Sum of this member's daily entries] |
-| **Team total** | **[Sum of all members' hours]** |
+|---|---|
+| Anh | 10 |
+| Mariska | 10 |
+| Sreeja | 10 |
+| Rijuh | 10 |
+| Montaha | 10 |
+| Kodai | 10 |
+| Shayaan | 10 |
+| **Team total** | **70** |
 
-Template drafted with OpenAI Codex using the provided Project 2 assignment instructions. Team members supply the estimates, methodology, and actual time records.
