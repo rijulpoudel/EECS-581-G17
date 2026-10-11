@@ -1,9 +1,18 @@
 
-"""AI solver for the inherited Minesweeper game
-
+"""
+Name: ai_solver.py
+Function: Choose and apply one Easy, Medium, or Hard move for the game AI.
 Inputs: A Minesweeper instance exposing rows, cols, revealed, flags,
         adjacent_mines, first_click, place_mines, reveal_cell and game_over.
-Outputs: step() returns (action, (column, row)) or None if no move remains.
+Outputs: choose_action() returns (action, (column, row)) or None without
+         changing state; step() applies that move and returns the same tuple.
+External sources: Easy/Medium logic by Shayaan (PR #19); Hard 1-2-1 pattern
+         and refactor by Mariska Rai (PR #22); deduction guard and this
+         prologue by Rijul Poudel with AI assistance (Hermes Agent), 10/11/2026.
+         All rules implement the EECS 581 Project 2 assignment specification.
+Authors: Shayaan, Mariska Rai, Rijul Poudel
+Date Created: 10/09/2026
+Date Last Edited: 10/11/2026
 
 Only revealed clue values and visible covered/flagged status guide deduction.
 The solver never inspects game.mines to decide which cell to select.
@@ -97,8 +106,10 @@ class AISolver:
                     for side in (-1, 1):
                         if horizontal:
                             hidden = [(col + i, row + side) for i in range(3)]
+                            opposite = [(col + i, row - side) for i in range(3)]
                         else:
                             hidden = [(col + side, row + i) for i in range(3)]
+                            opposite = [(col - side, row + i) for i in range(3)]
 
                         if any(
                             x < 0 or x >= self.game.cols or y < 0 or y >= self.game.rows
@@ -112,11 +123,26 @@ class AISolver:
                         if hidden[1] in self.game.flags:
                             continue
 
+                        # The deduction only holds when the other side of the
+                        # pattern is known (revealed or off the board). With
+                        # hidden cells on both sides the constraint has two
+                        # solutions, so flagging would be a guess.
+                        # ponytail: guards the classic one-sided pattern; a full
+                        # hidden-neighborhood check would be stricter.
+                        if any(
+                            0 <= x < self.game.cols and 0 <= y < self.game.rows
+                            and (x, y) not in revealed
+                            for x, y in opposite
+                        ):
+                            continue
+
                         # Flag each outer cell first, then reveal the safe
-                        # middle cell once both mines are marked.
-                        if hidden[0] not in self.game.flags:
+                        # middle cell once both mines are marked. Respect the
+                        # flag cap so a full flag supply cannot stall the AI.
+                        under_cap = len(self.game.flags) < self.game.num_mines
+                        if hidden[0] not in self.game.flags and under_cap:
                             return ("flag", hidden[0])
-                        if hidden[2] not in self.game.flags:
+                        if hidden[2] not in self.game.flags and under_cap:
                             return ("flag", hidden[2])
                         return ("reveal", hidden[1])
 
