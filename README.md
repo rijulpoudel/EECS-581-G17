@@ -1,51 +1,28 @@
-# EECS-581 Group 17 Project 1
-A 10x10 version of the classic puzzle game Minesweeper.
+# EECS-581 Group 17 Project 2
+
+A 10x10 version of the classic puzzle game Minesweeper, extended with an AI solver (easy / medium / hard), a game timer, and sound effects with music.
 
 ## Setup Instructions
-1. Ensure Python version 3.13 is installed.
 
-2. Clone the github repository
-
-3. `cd` into `EECS-581-G17`
-
-   You should see the folder `minesweeper` if you run `ls` (or `dir` on Windows)
-
-4. Create the virtual environment by running:
-
-   `python3.13 -m venv .venv`
-
-5. Change environment to the virtual environment by running:
-
-   If on Linux or MacOS: `source .venv/bin/activate`
-
-   If on Windows: `source \.venv\Scripts\activate`
-
-6. Install the pip package `pygame` by running: `pip install pygame`
-
-   You should now see `pygame` in the installed package list if you run `pip list`
-
-7. `cd` into the `minesweeper` folder
-
-8. Finally, start the program by running the command: `python main.py`
+1. Ensure Python 3.13 is installed.
+2. Clone the repository and `cd EECS-581-G17`.
+3. Create the virtual environment: `python3.13 -m venv .venv`, then activate it with `source .venv/bin/activate` (Windows: `.venv\Scripts\activate`).
+4. Install pygame: `pip install pygame`.
+5. `cd minesweeper` and start the game with `python main.py`.
+6. Run the tests from `minesweeper/` with `python -m unittest discover -s tests`.
 
 ## Controls
 
-When you start up the game, you first have to enter the number of mines you want (10-20).
+- Setup screen: pick a mode — Single Player (default), Human vs. AI (`T`), AI Only (`A`) — then type a mine count (10-20) and press Enter.
+- Left click uncovers a cell; right click toggles a flag.
+- In game: `E` / `M` / `H` = Easy / Medium / Hard AI assist · `Space` = one AI step · `A` = AI-only mode · `T` = human-vs-AI turns · `R` = restart · `Esc` = single player · `S` = sound on/off.
+- The timer runs in single-player with AI assistance off.
 
-Then, use left click to uncover spaces and right click to toggle flags. Right click again to remove flags that have been placed. 
+## Documentation
 
-Single-player starts by default. The timer starts on the first reveal and stops
-on a win or loss. E/M selects Easy/Medium AI assistance on the same board;
-Space performs one AI action and A toggles automatic actions. The timer is hidden
-while assistance is selected, but keeps tracking the session. Esc disables
-assistance and shows the elapsed time again.
+Everything is in [documentation/](documentation/):
 
-R restarts the current mode with the same mine count and resets the timer.
-T starts a fresh human-vs-AI game: successful human and computer actions
-alternate, with the human going first. E/M assistance is available only in
-single-player. Esc leaves alternating play and starts a fresh single-player game.
-
-See [the timer design and UML sequence diagram](minesweeper/docs/Timer.md).
-
-## System Architecture Documentation with AI solver updated
-[Link to page](minesweeper/docs/SystemArchitecture.md)
+- [System Architecture](documentation/SystemArchitecture.md) — components, data flow, key data structures, diagrams
+- [Sound and music](documentation/CustomFeature_Sound.md) — the custom addition, with UML class and sequence diagrams
+- [Game timer](documentation/Timer.md) — second enhancement, with a UML sequence diagram
+- [Person hours](documentation/person-hours.md) — estimation methodology and day-by-day actuals

@@ -345,7 +345,21 @@ controller.new_game()  # Keep the current mode and board configuration.
 controller.new_game("ai_only")  # Start a new board with the computer active.
 ```
 
+### AI solver levels (`ai_solver.py`)
+
+`AISolver(game, difficulty)` runs the selectable easy/medium/hard assist. `choose_action()` returns one move without touching state, `step()` applies it. It reads only visible information (revealed clues, covered/flagged status) and never inspects `game.mines`.
+
+| Difficulty | Behavior |
+| --- | --- |
+| easy | Random reveal among covered, unflagged cells. |
+| medium | Rule 1: when a clue's hidden neighbors equal its number, flag them. Rule 2: when a clue's flags equal its number, open its other hidden neighbors. Otherwise random. |
+| hard | All medium rules plus the 1-2-1 pattern: three revealed clues reading 1-2-1 with a hidden row on the known side get their two outer cells flagged and their middle cell opened. Applied only when the opposite side is known, so it never guesses; otherwise it falls back to medium rules and random. |
+
+Mode/difficulty routing in `main.py`: single-player assist uses `AISolver` (E/M/H keys, `Space` steps, `A` autoplays). `ai_only` and `human_vs_ai` (T) submit computer moves through `GameController.submit_action` every 300 ms: with a difficulty selected they use `AISolver.choose_action`, with none selected they use `solver.choose_move`.
+
 ## Custom Feature: Sound and Music
+
+The rubric custom addition is this sound system (UML in [CustomFeature_Sound.md](CustomFeature_Sound.md)); the game timer ([Timer.md](Timer.md)) is a second, also documented enhancement.
 
 Sound effects (reveal, flag, mine hit, win) and a looping background melody, synthesized in code and played through `pygame.mixer`. Press `S` to toggle sound. See [CustomFeature_Sound.md](CustomFeature_Sound.md) for the description and UML diagrams.
 
