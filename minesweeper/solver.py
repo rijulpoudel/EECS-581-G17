@@ -1,6 +1,8 @@
 """
-Name: Controller.py
-Function: Compute the move for AI solver
+Name: solver.py
+Function: Compute one AI move from a visible-board snapshot (constraint-propagation solver used when no assist difficulty is selected).
+Inputs: A visible board matrix of numbers 0-8 / "covered" / "flagged", and the public mine total; optional rng and rejected moves.
+Outputs: One ("action", col, row) tuple or None if no move remains; never changes game state.
 External sources: ChatGPT Astra
 Authors: Anh Hoang
 Date Created: 10/07/2026
